@@ -1,0 +1,36 @@
+=== SC3020 DATABASE MANAGEMENT SYSTEM - SUMMARY RESULTS ===
+
+DATASET INFORMATION:
+- Source: NBA games data (games.txt)
+- Total records: 26651
+- Key attribute: FT_PCT_home (Free Throw Percentage)
+
+STORAGE PERFORMANCE:
+- Record size: 44 bytes
+- Block size: 4096 bytes
+- Records per block: 92
+- Total blocks: 290
+- Storage efficiency: 98.7%
+
+INDEXING PERFORMANCE:
+- B+ tree order: 101
+- Tree height: 3 levels
+- Total nodes: 269
+- Index file size: 222740 bytes
+- Root node keys: 0.737, 0.833
+
+QUERY PERFORMANCE:
+- Query: FT_PCT_home > 0.9
+- Records matching query: 1805
+- Index node I/Os (total): 23
+- Index nodes accessed (unique): 20
+- Data block I/Os (total): 0
+- Data blocks accessed (unique): 0
+
+FILES GENERATED:
+- output/database.bin: Binary database file
+- output/bptree.bin: B+ tree index file
+- output/task1_results.txt: Storage component results
+- output/task2_results.txt: Indexing component results
+- output/task3_results.txt: Query processing results
+- output/summary_results.txt: This summary file

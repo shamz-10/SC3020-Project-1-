@@ -1,0 +1,8 @@
+=== TASK 1: STORAGE COMPONENT RESULTS ===
+Record Statistics:
+- Total records: 26651
+- Record size: 44 bytes
+- Records per block: 92
+- Total blocks: 290
+- Block size: 4096 bytes
+- Database file: output/database.bin
