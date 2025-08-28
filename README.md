@@ -20,9 +20,14 @@ This project implements a complete database management system with storage and i
 
 The system is organized into three main components:
 
-1. **Storage Layer** (`src/storage/`): Handles binary file I/O and block management. Includes cross-platform safety via static_assert checks on critical structures like Record and BlockHeader to prevent data corruption due to padding.
-2. **Indexing Layer** (`src/indexing/`): Implements B+ tree for efficient queries. Tracks both unique and total I/Os to help distinguish between high-locality access patterns and broad scans.
-3. **Utility Layer** (`src/utils/`): Provides data parsing and validation
+1. **Storage Layer** (`src/storage/`):
+   - Handles binary file I/O and block management.
+   - Includes cross-platform safety via static_assert checks on critical structures like Record and BlockHeader to prevent data corruption due to padding.
+3. **Indexing Layer** (`src/indexing/`):
+    - Implements B+ tree for efficient queries.
+    - Tracks both unique and total I/Os to help distinguish between high-locality access patterns and broad scans.
+5. **Utility Layer** (`src/utils/`):
+   - Provides data parsing and validation
 
 ## Project Structure
 ```
