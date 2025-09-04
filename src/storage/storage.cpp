@@ -186,12 +186,10 @@ int Database::addBlock(const Block& block) {
  */
 bool Database::addRecord(const Record& record) {
     // Step 1: Try to add to the current block if it exists and has space
-    // This optimization avoids scanning all blocks for each record
     if (num_blocks > 0) {
         Block currentBlock;
         if (readBlock(num_blocks - 1, currentBlock)) {
             if (!currentBlock.isFull()) {
-                // Current block has space, add record here
                 currentBlock.addRecord(record);
                 writeBlock(num_blocks - 1, currentBlock);
                 num_records++;
@@ -199,20 +197,28 @@ bool Database::addRecord(const Record& record) {
             }
         }
     }
-    
-    // Step 2: Create new block if current block is full or doesn't exist
-    // This handles the case where we need a new block
+
+    // Step 2: Capacity check before creating a new block
+    static const size_t MAX_DATABASE_SIZE = 100 * 1024 * 1024; // 100 MB
+    size_t current_size = (num_blocks * Block::BLOCK_SIZE) + sizeof(int) * 2; // 8-byte metadata
+    if (current_size + Block::BLOCK_SIZE > MAX_DATABASE_SIZE) {
+        std::cerr << "Error: Database capacity exceeded (100 MB limit)." << std::endl;
+        return false;
+    }
+
+    // Step 3: Create new block if current block is full or doesn't exist
     Block newBlock;
     newBlock.header.block_id = num_blocks;
     newBlock.addRecord(record);
-    
+
     if (addBlock(newBlock) != -1) {
         num_records++;
         return true;
     }
-    
+
     return false; // Return false if all attempts failed
 }
+
 
 /**
  * Get Record from Database
