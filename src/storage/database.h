@@ -43,7 +43,7 @@
  * - File I/O operations with error handling
  * - Statistics generation for analysis
  */
-static const size_t MAX_DATABASE_SIZE = 100 * 1024 * 1024; // 100 MB
+static const size_t MAX_DATABASE_SIZE = 100 * 1024 * 1024; // Set capacity of database to 100 MB
 
 class Database {
 private:
