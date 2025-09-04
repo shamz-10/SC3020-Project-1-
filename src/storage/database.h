@@ -43,6 +43,8 @@
  * - File I/O operations with error handling
  * - Statistics generation for analysis
  */
+static const size_t MAX_DATABASE_SIZE = 100 * 1024 * 1024; // 100 MB
+
 class Database {
 private:
     std::string filename;      // Path to the binary database file
