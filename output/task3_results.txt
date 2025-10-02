@@ -8,7 +8,7 @@ B+ Tree Method:
 - Data block I/Os (total): 1805
 - Data blocks accessed (unique): 288
 - Average FT_PCT_home: 0.9396
-- Runtime: 0.000058 seconds
+- Runtime: 0.000037 seconds
 
 Deletion Process:
 - Records deleted: 1778
@@ -16,10 +16,10 @@ Deletion Process:
 Brute Force Method:
 - Records found: 1778
 - Data blocks accessed: 290
-- Runtime: 0.000756 seconds
+- Runtime: 0.000453 seconds
 
 Performance Comparison:
-- Speedup: 13.03x faster
+- Speedup: 12.24x faster
 - Block access reduction: 0.7%
 
 Updated B+ Tree Statistics After Deletion:
