@@ -61,7 +61,7 @@ public:
 };
 
 // Forward declaration
-void generateResultsTables(int records_found, float avg_ft_pct, int records_deleted, int brute_force_records, double brute_force_time);
+void generateResultsTables(int records_found, float avg_ft_pct, int records_deleted, int brute_force_records, double brute_force_time, int query_index_ios_total, int query_index_nodes_unique, int query_data_ios_total, int query_data_blocks_unique);
 
 /**
  * Task 1: Storage Component Implementation
@@ -163,6 +163,7 @@ void task2_indexing_component() {
     std::cout << "Time to build B+ tree: " << std::fixed << std::setprecision(3) 
               << index_time << " seconds" << std::endl;
     
+    
     // Close the B+ tree to ensure metadata is written
     bptree.close();
 }
@@ -201,6 +202,12 @@ void task3_delete_operations() {
     std::vector<RecordPointer> bptree_results = bptree.rangeSearch(0.9f, 1.0f);
     
     double bptree_time = bptree_timer.elapsed();
+    
+    // Store the I/O counts for the query (before deletion)
+    int query_index_ios_total = bptree.getIndexNodeIOsTotal();
+    int query_index_nodes_unique = bptree.getIndexNodesAccessedUnique();
+    int query_data_ios_total = db.getDataBlockIOsTotal();
+    int query_data_blocks_unique = db.getDataBlocksAccessedUnique();
     
     // Step 3: Calculate statistics for B+ tree results BEFORE deletion
     // Batch by block to minimize repeated reads
@@ -279,7 +286,7 @@ void task3_delete_operations() {
         }
     }
     
-    std::cout << "Deleted " << deleted_count << " games from B+ tree" << std::endl;
+    std::cout << "Deleted " << deleted_records.size() << " games from B+ tree" << std::endl;
     std::cout << "Deleted " << db_deleted_count << " games from database" << std::endl;
     
     // Step 7: Print comprehensive performance comparison
@@ -288,13 +295,13 @@ void task3_delete_operations() {
     // B+ Tree method results
     std::cout << "B+ Tree Method:" << std::endl;
     std::cout << "  - Games found: " << deleted_records.size() << std::endl;
-    std::cout << "  - Games deleted: " << deleted_count << std::endl;
+    std::cout << "  - Games deleted: " << deleted_records.size() << std::endl;
     std::cout << "  - Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_bptree << std::endl;
     std::cout << "  - Execution time: " << std::fixed << std::setprecision(6) << bptree_time << " seconds" << std::endl;
-    std::cout << "  - Index nodes accessed (total I/Os): " << bptree.getIndexNodeIOsTotal() << std::endl;
-    std::cout << "  - Index nodes accessed (unique): " << bptree.getIndexNodesAccessedUnique() << std::endl;
-    std::cout << "  - Data blocks accessed (total I/Os): " << db.getDataBlockIOsTotal() << std::endl;
-    std::cout << "  - Data blocks accessed (unique): " << db.getDataBlocksAccessedUnique() << std::endl;
+    std::cout << "  - Index nodes accessed (total I/Os): " << query_index_ios_total << std::endl;
+    std::cout << "  - Index nodes accessed (unique): " << query_index_nodes_unique << std::endl;
+    std::cout << "  - Data blocks accessed (total I/Os): " << query_data_ios_total << std::endl;
+    std::cout << "  - Data blocks accessed (unique): " << query_data_blocks_unique << std::endl;
     
     // Brute force method results
     std::cout << "\nBrute Force Method:" << std::endl;
@@ -316,7 +323,7 @@ void task3_delete_operations() {
     bptree.printStatistics();
     
     // Step 9: Generate results tables with correct values (AFTER B+ tree is updated)
-    generateResultsTables(deleted_records.size(), avg_ft_bptree, deleted_records.size(), brute_force_results.size(), brute_time);
+    generateResultsTables(deleted_records.size(), avg_ft_bptree, deleted_records.size(), brute_force_results.size(), brute_time, query_index_ios_total, query_index_nodes_unique, query_data_ios_total, query_data_blocks_unique);
 }
 
 /**
@@ -329,7 +336,7 @@ void task3_delete_operations() {
  * @param avg_ft_pct Average FT_PCT_home of found games
  * @param records_deleted Number of games actually deleted
  */
-void generateResultsTables(int records_found, float avg_ft_pct, int records_deleted, int brute_force_records, double brute_force_time) {
+void generateResultsTables(int records_found, float avg_ft_pct, int records_deleted, int brute_force_records, double brute_force_time, int query_index_ios_total, int query_index_nodes_unique, int query_data_ios_total, int query_data_blocks_unique) {
     std::cout << "\n=== GENERATING RESULTS TABLES ===" << std::endl;
     
     // Open database and B+ tree to get final statistics
@@ -374,7 +381,6 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
             if (i < root_keys.size() - 1) task2_file << " ";
         }
         task2_file << std::endl;
-        
         task2_file << "- Index file: output/bptree.bin" << std::endl;
         task2_file.close();
         std::cout << "✓ Task 2 results saved to output/task2_results.txt" << std::endl;
@@ -420,10 +426,10 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         // Use the correct values from the main program execution
         task3_file << "B+ Tree Method:" << std::endl;
         task3_file << "- Games found: " << records_found << std::endl;
-        task3_file << "- Index node I/Os (total): " << bptree.getIndexNodeIOsTotal() << std::endl;
-        task3_file << "- Index nodes accessed (unique): " << bptree.getIndexNodesAccessedUnique() << std::endl;
-        task3_file << "- Data block I/Os (total): " << db.getDataBlockIOsTotal() << std::endl;
-        task3_file << "- Data blocks accessed (unique): " << unique_blocks_accessed.size() << std::endl;
+        task3_file << "- Index node I/Os (total): " << query_index_ios_total << std::endl;
+        task3_file << "- Index nodes accessed (unique): " << query_index_nodes_unique << std::endl;
+        task3_file << "- Data block I/Os (total): " << query_data_ios_total << std::endl;
+        task3_file << "- Data blocks accessed (unique): " << query_data_blocks_unique << std::endl;
         task3_file << "- Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_pct << std::endl;
         task3_file << "- Runtime: " << std::fixed << std::setprecision(6) << bptree_time << " seconds" << std::endl;
         task3_file << std::endl;
