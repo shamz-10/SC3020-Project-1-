@@ -198,6 +198,10 @@ private:
      */
     void splitInternal(int node_id);
     
+    // Deletion helper functions
+    void removeFromLeaf(int leaf_id, float key);
+    void handleUnderflow(int node_id);
+    
     // Utility Functions
     
 
