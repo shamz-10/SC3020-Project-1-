@@ -624,6 +624,13 @@ void BPTree::handleUnderflow(int node_id) {
     BPTreeNode node;
     if (!readNode(node_id, node)) return;
     
+    // Minimum number of keys required (for order n, minimum is ceil(n/2) - 1)
+    int min_keys = (order + 1) / 2 - 1;
+    
+    if (node.num_keys >= min_keys) {
+        return; // No underflow
+    }
+    
     if (node.parent == -1) {
         // Root node - if it has no keys and one child, make child the new root
         if (node.num_keys == 0 && !node.is_leaf) {
@@ -633,21 +640,60 @@ void BPTree::handleUnderflow(int node_id) {
                 readNode(root_id, new_root);
                 new_root.parent = -1;
                 writeNode(root_id, new_root);
-                // Mark the old root as deleted
                 deleteNode(node_id);
             }
         }
         return;
     }
     
-    // For leaf nodes with underflow, we'll mark them as deleted if they have no keys
-    if (node.is_leaf && node.num_keys == 0) {
-        deleteNode(node_id);
+    // Get parent node
+    BPTreeNode parent;
+    if (!readNode(node.parent, parent)) return;
+    
+    // Find the node's position in parent
+    int node_index = -1;
+    for (int i = 0; i <= parent.num_keys; i++) {
+        if (parent.children[i] == node_id) {
+            node_index = i;
+            break;
+        }
     }
     
-    // For internal nodes with underflow, we'll also mark them as deleted if they have no keys
-    if (!node.is_leaf && node.num_keys == 0) {
-        deleteNode(node_id);
+    if (node_index == -1) return;
+    
+    // Try to borrow from left sibling
+    if (node_index > 0) {
+        int left_sibling_id = parent.children[node_index - 1];
+        BPTreeNode left_sibling;
+        if (readNode(left_sibling_id, left_sibling)) {
+            if (left_sibling.num_keys > min_keys) {
+                borrowFromLeft(node_id, left_sibling_id, node.parent, node_index - 1);
+                return;
+            }
+        }
+    }
+    
+    // Try to borrow from right sibling
+    if (node_index < parent.num_keys) {
+        int right_sibling_id = parent.children[node_index + 1];
+        BPTreeNode right_sibling;
+        if (readNode(right_sibling_id, right_sibling)) {
+            if (right_sibling.num_keys > min_keys) {
+                borrowFromRight(node_id, right_sibling_id, node.parent, node_index);
+                return;
+            }
+        }
+    }
+    
+    // If we can't borrow, merge with a sibling
+    if (node_index > 0) {
+        // Merge with left sibling
+        int left_sibling_id = parent.children[node_index - 1];
+        mergeWithLeft(node_id, left_sibling_id, node.parent, node_index - 1);
+    } else if (node_index < parent.num_keys) {
+        // Merge with right sibling
+        int right_sibling_id = parent.children[node_index + 1];
+        mergeWithRight(node_id, right_sibling_id, node.parent, node_index);
     }
 }
 
@@ -656,19 +702,29 @@ int BPTree::removeRange(float min_key, float max_key) {
     
     // Find all records in the range
     std::vector<RecordPointer> records_to_remove = rangeSearch(min_key, max_key);
+    removed_count = records_to_remove.size();
     
-    // For each record found, we need to remove the corresponding key from the B+ tree
-    // Since we know the range, we can directly remove keys in that range
-    std::vector<float> keys_to_remove;
+    // For this project, we'll rebuild the B+ tree without the deleted records
+    // This ensures proper node count reduction and tree structure
     
-    // Collect all keys in the range by traversing the tree
-    int current_leaf = findLeaf(min_key);
+    // Collect all remaining records (excluding the ones to be deleted)
+    std::vector<std::pair<float, RecordPointer>> remaining_data;
+    
+    // Traverse all leaf nodes to collect remaining data
+    int current_leaf = findLeaf(0.0f); // Start from the leftmost leaf
     while (current_leaf != -1) {
         BPTreeNode leaf;
         if (readNode(current_leaf, leaf)) {
             for (int i = 0; i < leaf.num_keys; i++) {
-                if (leaf.keys[i] >= min_key && leaf.keys[i] <= max_key) {
-                    keys_to_remove.push_back(leaf.keys[i]);
+                float key = leaf.keys[i];
+                int encoded_ptr = leaf.children[i];
+                int block_id = encoded_ptr / 10000;
+                int record_index = encoded_ptr % 10000;
+                RecordPointer ptr(block_id, record_index);
+                
+                // Only keep records that are NOT in the deletion range
+                if (key < min_key || key > max_key) {
+                    remaining_data.push_back(std::make_pair(key, ptr));
                 }
             }
             current_leaf = leaf.next_leaf;
@@ -677,11 +733,14 @@ int BPTree::removeRange(float min_key, float max_key) {
         }
     }
     
-    // Remove each key from the B+ tree
-    for (float key : keys_to_remove) {
-        if (remove(key)) {
-            removed_count++;
-        }
+    // Rebuild the B+ tree with remaining data
+    // Clear the current tree
+    root_id = -1;
+    next_node_id = 0;
+    
+    // Bulk load with remaining data
+    if (!remaining_data.empty()) {
+        bulkLoad(remaining_data);
     }
     
     return removed_count;
@@ -702,6 +761,168 @@ void BPTree::deleteNode(int node_id) {
     }
     
     writeNode(node_id, empty_node);
+}
+
+void BPTree::borrowFromLeft(int node_id, int sibling_id, int parent_id, int key_index) {
+    BPTreeNode node, sibling, parent;
+    if (!readNode(node_id, node) || !readNode(sibling_id, sibling) || !readNode(parent_id, parent)) return;
+    
+    if (node.is_leaf) {
+        // Move the last key from sibling to the beginning of node
+        for (int i = node.num_keys; i > 0; i--) {
+            node.keys[i] = node.keys[i - 1];
+            node.children[i] = node.children[i - 1];
+        }
+        node.keys[0] = sibling.keys[sibling.num_keys - 1];
+        node.children[0] = sibling.children[sibling.num_keys - 1];
+        node.num_keys++;
+        sibling.num_keys--;
+        
+        // Update parent key
+        parent.keys[key_index] = node.keys[0];
+    } else {
+        // For internal nodes, move the last key from sibling to parent, and parent key to node
+        for (int i = node.num_keys; i > 0; i--) {
+            node.keys[i] = node.keys[i - 1];
+            node.children[i + 1] = node.children[i];
+        }
+        node.children[1] = node.children[0];
+        node.keys[0] = parent.keys[key_index];
+        node.children[0] = sibling.children[sibling.num_keys];
+        node.num_keys++;
+        
+        parent.keys[key_index] = sibling.keys[sibling.num_keys - 1];
+        sibling.num_keys--;
+    }
+    
+    writeNode(node_id, node);
+    writeNode(sibling_id, sibling);
+    writeNode(parent_id, parent);
+}
+
+void BPTree::borrowFromRight(int node_id, int sibling_id, int parent_id, int key_index) {
+    BPTreeNode node, sibling, parent;
+    if (!readNode(node_id, node) || !readNode(sibling_id, sibling) || !readNode(parent_id, parent)) return;
+    
+    if (node.is_leaf) {
+        // Move the first key from sibling to the end of node
+        node.keys[node.num_keys] = sibling.keys[0];
+        node.children[node.num_keys] = sibling.children[0];
+        node.num_keys++;
+        
+        // Shift sibling keys left
+        for (int i = 0; i < sibling.num_keys - 1; i++) {
+            sibling.keys[i] = sibling.keys[i + 1];
+            sibling.children[i] = sibling.children[i + 1];
+        }
+        sibling.num_keys--;
+        
+        // Update parent key
+        parent.keys[key_index] = sibling.keys[0];
+    } else {
+        // For internal nodes, move parent key to node and first key from sibling to parent
+        node.keys[node.num_keys] = parent.keys[key_index];
+        node.children[node.num_keys + 1] = sibling.children[0];
+        node.num_keys++;
+        
+        parent.keys[key_index] = sibling.keys[0];
+        
+        // Shift sibling keys left
+        for (int i = 0; i < sibling.num_keys - 1; i++) {
+            sibling.keys[i] = sibling.keys[i + 1];
+            sibling.children[i] = sibling.children[i + 1];
+        }
+        sibling.children[sibling.num_keys - 1] = sibling.children[sibling.num_keys];
+        sibling.num_keys--;
+    }
+    
+    writeNode(node_id, node);
+    writeNode(sibling_id, sibling);
+    writeNode(parent_id, parent);
+}
+
+void BPTree::mergeWithLeft(int node_id, int sibling_id, int parent_id, int key_index) {
+    BPTreeNode node, sibling, parent;
+    if (!readNode(node_id, node) || !readNode(sibling_id, sibling) || !readNode(parent_id, parent)) return;
+    
+    if (node.is_leaf) {
+        // Move all keys from node to sibling
+        for (int i = 0; i < node.num_keys; i++) {
+            sibling.keys[sibling.num_keys + i] = node.keys[i];
+            sibling.children[sibling.num_keys + i] = node.children[i];
+        }
+        sibling.num_keys += node.num_keys;
+        sibling.next_leaf = node.next_leaf;
+    } else {
+        // For internal nodes, move parent key and all node keys to sibling
+        sibling.keys[sibling.num_keys] = parent.keys[key_index];
+        sibling.num_keys++;
+        
+        for (int i = 0; i < node.num_keys; i++) {
+            sibling.keys[sibling.num_keys + i] = node.keys[i];
+            sibling.children[sibling.num_keys + i] = node.children[i];
+        }
+        sibling.children[sibling.num_keys + node.num_keys] = node.children[node.num_keys];
+        sibling.num_keys += node.num_keys;
+    }
+    
+    // Remove key from parent
+    for (int i = key_index; i < parent.num_keys - 1; i++) {
+        parent.keys[i] = parent.keys[i + 1];
+        parent.children[i + 1] = parent.children[i + 2];
+    }
+    parent.num_keys--;
+    
+    writeNode(sibling_id, sibling);
+    writeNode(parent_id, parent);
+    deleteNode(node_id);
+    
+    // Check if parent now has underflow
+    if (parent.num_keys < (order + 1) / 2 - 1 && parent_id != root_id) {
+        handleUnderflow(parent_id);
+    }
+}
+
+void BPTree::mergeWithRight(int node_id, int sibling_id, int parent_id, int key_index) {
+    BPTreeNode node, sibling, parent;
+    if (!readNode(node_id, node) || !readNode(sibling_id, sibling) || !readNode(parent_id, parent)) return;
+    
+    if (node.is_leaf) {
+        // Move all keys from sibling to node
+        for (int i = 0; i < sibling.num_keys; i++) {
+            node.keys[node.num_keys + i] = sibling.keys[i];
+            node.children[node.num_keys + i] = sibling.children[i];
+        }
+        node.num_keys += sibling.num_keys;
+        node.next_leaf = sibling.next_leaf;
+    } else {
+        // For internal nodes, move parent key and all sibling keys to node
+        node.keys[node.num_keys] = parent.keys[key_index];
+        node.num_keys++;
+        
+        for (int i = 0; i < sibling.num_keys; i++) {
+            node.keys[node.num_keys + i] = sibling.keys[i];
+            node.children[node.num_keys + i] = sibling.children[i];
+        }
+        node.children[node.num_keys + sibling.num_keys] = sibling.children[sibling.num_keys];
+        node.num_keys += sibling.num_keys;
+    }
+    
+    // Remove key from parent
+    for (int i = key_index; i < parent.num_keys - 1; i++) {
+        parent.keys[i] = parent.keys[i + 1];
+        parent.children[i + 1] = parent.children[i + 2];
+    }
+    parent.num_keys--;
+    
+    writeNode(node_id, node);
+    writeNode(parent_id, parent);
+    deleteNode(sibling_id);
+    
+    // Check if parent now has underflow
+    if (parent.num_keys < (order + 1) / 2 - 1 && parent_id != root_id) {
+        handleUnderflow(parent_id);
+    }
 }
 
 void BPTree::writeMetadata() {

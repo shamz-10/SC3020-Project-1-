@@ -2,28 +2,28 @@
 
 DATASET INFORMATION:
 - Source: NBA games data (games.txt)
-- Total games: 53302
+- Total games: 26651
 - Key attribute: FT_PCT_home (Free Throw Percentage)
 
 STORAGE PERFORMANCE:
 - Record size: 44 bytes
 - Block size: 4096 bytes
 - Games per block: 92
-- Total blocks: 580
+- Total blocks: 290
 - Storage efficiency: 98.7%
 
 INDEXING PERFORMANCE:
 - B+ tree order: 101
 - Tree height: 3 levels
-- Total nodes: 804
-- Index file size: 665720 bytes
-- Root node keys: 0.667, 0.727, 0.778, 0.824, 0.897
+- Total nodes: 269
+- Index file size: 222740 bytes
+- Root node keys: 0.737, 0.833
 
 QUERY PERFORMANCE:
 - Query: FT_PCT_home > 0.9
-- Games matching query: 695
-- Index node I/Os (total): 23
-- Index nodes accessed (unique): 20
+- Games matching query: 0
+- Index node I/Os (total): 8
+- Index nodes accessed (unique): 4
 - Data block I/Os (total): 0
 - Data blocks accessed (unique): 0
 

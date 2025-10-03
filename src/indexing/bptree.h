@@ -202,6 +202,10 @@ private:
     void removeFromLeaf(int leaf_id, float key);
     void handleUnderflow(int node_id);
     void deleteNode(int node_id);
+    void borrowFromLeft(int node_id, int sibling_id, int parent_id, int key_index);
+    void borrowFromRight(int node_id, int sibling_id, int parent_id, int key_index);
+    void mergeWithLeft(int node_id, int sibling_id, int parent_id, int key_index);
+    void mergeWithRight(int node_id, int sibling_id, int parent_id, int key_index);
     
     // Utility Functions
     
