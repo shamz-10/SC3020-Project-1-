@@ -201,6 +201,7 @@ private:
     // Deletion helper functions
     void removeFromLeaf(int leaf_id, float key);
     void handleUnderflow(int node_id);
+    void deleteNode(int node_id);
     
     // Utility Functions
     

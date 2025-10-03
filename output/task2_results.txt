@@ -1,8 +1,8 @@
 === TASK 2: INDEXING COMPONENT RESULTS ===
 B+ Tree Statistics:
 - Order (n): 101
-- Number of nodes: 269
+- Number of nodes: 804
 - Number of levels: 3
-- Root node ID: 268
-- Root node keys: 0.737 0.833
+- Root node ID: 803
+- Root node keys: 0.667 0.727 0.778 0.824 0.897
 - Index file: output/bptree.bin

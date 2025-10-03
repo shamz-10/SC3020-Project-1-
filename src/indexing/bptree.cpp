@@ -633,14 +633,22 @@ void BPTree::handleUnderflow(int node_id) {
                 readNode(root_id, new_root);
                 new_root.parent = -1;
                 writeNode(root_id, new_root);
+                // Mark the old root as deleted
+                deleteNode(node_id);
             }
         }
         return;
     }
     
-    // For simplicity, we'll just leave underflowed nodes as-is
-    // In a full implementation, we would handle borrowing and merging
-    // This ensures the tree remains functional while allowing node count to change
+    // For leaf nodes with underflow, we'll mark them as deleted if they have no keys
+    if (node.is_leaf && node.num_keys == 0) {
+        deleteNode(node_id);
+    }
+    
+    // For internal nodes with underflow, we'll also mark them as deleted if they have no keys
+    if (!node.is_leaf && node.num_keys == 0) {
+        deleteNode(node_id);
+    }
 }
 
 int BPTree::removeRange(float min_key, float max_key) {
@@ -649,42 +657,51 @@ int BPTree::removeRange(float min_key, float max_key) {
     // Find all records in the range
     std::vector<RecordPointer> records_to_remove = rangeSearch(min_key, max_key);
     
-    // Remove each record by finding and removing the corresponding key
-    for (const RecordPointer& ptr : records_to_remove) {
-        // Find the key value for this record pointer by searching through leaf nodes
-        // This is a simplified approach - in practice, you'd maintain a reverse mapping
-        
-        // Search through all leaf nodes to find the key associated with this record pointer
-        int current_leaf = findLeaf(min_key);
-        bool found = false;
-        
-        while (current_leaf != -1 && !found) {
-            BPTreeNode leaf;
-            if (readNode(current_leaf, leaf)) {
-                for (int i = 0; i < leaf.num_keys; i++) {
-                    int encoded_ptr = leaf.children[i];
-                    int block_id = encoded_ptr / 10000;
-                    int record_index = encoded_ptr % 10000;
-                    
-                    if (block_id == ptr.block_id && record_index == ptr.record_index) {
-                        // Found the key, remove it
-                        if (remove(leaf.keys[i])) {
-                            removed_count++;
-                            found = true;
-                            break;
-                        }
-                    }
+    // For each record found, we need to remove the corresponding key from the B+ tree
+    // Since we know the range, we can directly remove keys in that range
+    std::vector<float> keys_to_remove;
+    
+    // Collect all keys in the range by traversing the tree
+    int current_leaf = findLeaf(min_key);
+    while (current_leaf != -1) {
+        BPTreeNode leaf;
+        if (readNode(current_leaf, leaf)) {
+            for (int i = 0; i < leaf.num_keys; i++) {
+                if (leaf.keys[i] >= min_key && leaf.keys[i] <= max_key) {
+                    keys_to_remove.push_back(leaf.keys[i]);
                 }
-                if (!found) {
-                    current_leaf = leaf.next_leaf;
-                }
-            } else {
-                break;
             }
+            current_leaf = leaf.next_leaf;
+        } else {
+            break;
+        }
+    }
+    
+    // Remove each key from the B+ tree
+    for (float key : keys_to_remove) {
+        if (remove(key)) {
+            removed_count++;
         }
     }
     
     return removed_count;
+}
+
+void BPTree::deleteNode(int node_id) {
+    // Mark the node as deleted by writing an empty node
+    BPTreeNode empty_node;
+    empty_node.num_keys = 0;
+    empty_node.is_leaf = false;
+    empty_node.parent = -1;
+    empty_node.next_leaf = -1;
+    
+    // Clear all keys and children
+    for (int i = 0; i < order; i++) {
+        empty_node.keys[i] = 0.0f;
+        empty_node.children[i] = -1;
+    }
+    
+    writeNode(node_id, empty_node);
 }
 
 void BPTree::writeMetadata() {
