@@ -266,7 +266,7 @@ void task3_delete_operations() {
     float avg_ft_brute = brute_force_results.empty() ? 0.0f : sum_ft_brute / brute_force_results.size();
     
     // Step 6: Now delete the records from both B+ tree and database
-    std::cout << "Deleting records with FT_PCT_home > 0.9 from B+ tree and database..." << std::endl;
+    std::cout << "Deleting games with FT_PCT_home > 0.9 from B+ tree and database..." << std::endl;
     
     // Delete records from B+ tree
     int deleted_count = bptree.removeRange(0.9f, 1.0f);
@@ -279,16 +279,16 @@ void task3_delete_operations() {
         }
     }
     
-    std::cout << "Deleted " << deleted_count << " records from B+ tree" << std::endl;
-    std::cout << "Deleted " << db_deleted_count << " records from database" << std::endl;
+    std::cout << "Deleted " << deleted_count << " games from B+ tree" << std::endl;
+    std::cout << "Deleted " << db_deleted_count << " games from database" << std::endl;
     
     // Step 7: Print comprehensive performance comparison
     std::cout << "\n=== PERFORMANCE COMPARISON ===" << std::endl;
     
     // B+ Tree method results
     std::cout << "B+ Tree Method:" << std::endl;
-    std::cout << "  - Records found: " << deleted_records.size() << std::endl;
-    std::cout << "  - Records deleted: " << deleted_count << std::endl;
+    std::cout << "  - Games found: " << deleted_records.size() << std::endl;
+    std::cout << "  - Games deleted: " << deleted_count << std::endl;
     std::cout << "  - Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_bptree << std::endl;
     std::cout << "  - Execution time: " << std::fixed << std::setprecision(3) << bptree_time << " seconds" << std::endl;
     std::cout << "  - Index nodes accessed (total I/Os): " << bptree.getIndexNodeIOsTotal() << std::endl;
@@ -298,7 +298,7 @@ void task3_delete_operations() {
     
     // Brute force method results
     std::cout << "\nBrute Force Method:" << std::endl;
-    std::cout << "  - Records found: " << brute_force_results.size() << std::endl;
+    std::cout << "  - Games found: " << brute_force_results.size() << std::endl;
     std::cout << "  - Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_brute << std::endl;
     std::cout << "  - Execution time: " << std::fixed << std::setprecision(3) << brute_time << " seconds" << std::endl;
     std::cout << "  - Data blocks accessed: " << blocks_accessed << std::endl;
@@ -325,9 +325,9 @@ void task3_delete_operations() {
  * Creates formatted results tables as text files for submission.
  * This includes all performance metrics and statistics.
  * 
- * @param records_found Number of records found by B+ tree query
- * @param avg_ft_pct Average FT_PCT_home of found records
- * @param records_deleted Number of records actually deleted
+ * @param records_found Number of games found by B+ tree query
+ * @param avg_ft_pct Average FT_PCT_home of found games
+ * @param records_deleted Number of games actually deleted
  */
 void generateResultsTables(int records_found, float avg_ft_pct, int records_deleted, int brute_force_records, double brute_force_time) {
     std::cout << "\n=== GENERATING RESULTS TABLES ===" << std::endl;
@@ -345,10 +345,10 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
     std::ofstream task1_file("output/task1_results.txt");
     if (task1_file.is_open()) {
         task1_file << "=== TASK 1: STORAGE COMPONENT RESULTS ===" << std::endl;
-        task1_file << "Record Statistics:" << std::endl;
-        task1_file << "- Total records: " << db.getNumRecords() << std::endl;
+        task1_file << "Game Statistics:" << std::endl;
+        task1_file << "- Total games: " << db.getNumRecords() << std::endl;
         task1_file << "- Record size: " << sizeof(Record) << " bytes" << std::endl;
-        task1_file << "- Records per block: " << (Block::BLOCK_SIZE - sizeof(BlockHeader)) / sizeof(Record) << std::endl;
+        task1_file << "- Games per block: " << (Block::BLOCK_SIZE - sizeof(BlockHeader)) / sizeof(Record) << std::endl;
         task1_file << "- Total blocks: " << db.getNumBlocks() << std::endl;
         task1_file << "- Block size: " << Block::BLOCK_SIZE << " bytes" << std::endl;
         task1_file << "- Database file: output/database.bin" << std::endl;
@@ -384,7 +384,7 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
     std::ofstream task3_file("output/task3_results.txt");
     if (task3_file.is_open()) {
         task3_file << "=== TASK 3: QUERY PROCESSING RESULTS ===" << std::endl;
-        task3_file << "Query: Find and delete records with FT_PCT_home > 0.9" << std::endl;
+        task3_file << "Query: Find and delete games with FT_PCT_home > 0.9" << std::endl;
         task3_file << std::endl;
         
         // IMPORTANT: We need to query BEFORE deletion to get correct results
@@ -399,7 +399,7 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         std::vector<RecordPointer> results = bptree.rangeSearch(0.9f, 1.0f);
         double bptree_time = bptree_timer.elapsed();
         
-        // Calculate average FT_PCT_home for found records
+        // Calculate average FT_PCT_home for found games
         float sum_ft = 0.0f;
         int valid_records = 0;
         for (const RecordPointer& ptr : results) {
@@ -419,7 +419,7 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         
         // Use the correct values from the main program execution
         task3_file << "B+ Tree Method:" << std::endl;
-        task3_file << "- Records found: " << records_found << std::endl;
+        task3_file << "- Games found: " << records_found << std::endl;
         task3_file << "- Index node I/Os (total): " << bptree.getIndexNodeIOsTotal() << std::endl;
         task3_file << "- Index nodes accessed (unique): " << bptree.getIndexNodesAccessedUnique() << std::endl;
         task3_file << "- Data block I/Os (total): " << db.getDataBlockIOsTotal() << std::endl;
@@ -430,12 +430,12 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         
         // Show deletion results
         task3_file << "Deletion Process:" << std::endl;
-        task3_file << "- Records deleted: " << records_deleted << std::endl;
+        task3_file << "- Games deleted: " << records_deleted << std::endl;
         task3_file << std::endl;
         
         // Brute force comparison - use the values from main program execution
         task3_file << "Brute Force Method:" << std::endl;
-        task3_file << "- Records found: " << brute_force_records << std::endl;
+        task3_file << "- Games found: " << brute_force_records << std::endl;
         task3_file << "- Data blocks accessed: " << db.getNumBlocks() << std::endl;  // All blocks scanned
         task3_file << "- Runtime: " << std::fixed << std::setprecision(6) << brute_force_time << " seconds" << std::endl;
         task3_file << std::endl;
@@ -473,14 +473,14 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         
         summary_file << "DATASET INFORMATION:" << std::endl;
         summary_file << "- Source: NBA games data (games.txt)" << std::endl;
-        summary_file << "- Total records: " << db.getNumRecords() << std::endl;
+        summary_file << "- Total games: " << db.getNumRecords() << std::endl;
         summary_file << "- Key attribute: FT_PCT_home (Free Throw Percentage)" << std::endl;
         summary_file << std::endl;
         
         summary_file << "STORAGE PERFORMANCE:" << std::endl;
         summary_file << "- Record size: " << sizeof(Record) << " bytes" << std::endl;
         summary_file << "- Block size: " << Block::BLOCK_SIZE << " bytes" << std::endl;
-        summary_file << "- Records per block: " << (Block::BLOCK_SIZE - sizeof(BlockHeader)) / sizeof(Record) << std::endl;
+        summary_file << "- Games per block: " << (Block::BLOCK_SIZE - sizeof(BlockHeader)) / sizeof(Record) << std::endl;
         summary_file << "- Total blocks: " << db.getNumBlocks() << std::endl;
         summary_file << "- Storage efficiency: " << std::fixed << std::setprecision(1) 
                      << (db.getNumRecords() * sizeof(Record) * 100.0 / (db.getNumBlocks() * Block::BLOCK_SIZE)) << "%" << std::endl;
@@ -507,7 +507,7 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         bptree.resetIOCounters();
         db.resetIOCounters();
         std::vector<RecordPointer> query_results = bptree.rangeSearch(0.9f, 1.0f);
-        summary_file << "- Records matching query: " << query_results.size() << std::endl;
+        summary_file << "- Games matching query: " << query_results.size() << std::endl;
         summary_file << "- Index node I/Os (total): " << bptree.getIndexNodeIOsTotal() << std::endl;
         summary_file << "- Index nodes accessed (unique): " << bptree.getIndexNodesAccessedUnique() << std::endl;
         summary_file << "- Data block I/Os (total): " << db.getDataBlockIOsTotal() << std::endl;

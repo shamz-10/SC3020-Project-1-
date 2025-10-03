@@ -1,8 +1,16 @@
 === TASK 1: STORAGE COMPONENT RESULTS ===
+<<<<<<< HEAD
 Record Statistics:
 - Total records: 106604
 - Record size: 44 bytes
 - Records per block: 92
 - Total blocks: 1159
+=======
+Game Statistics:
+- Total games: 26651
+- Record size: 44 bytes
+- Games per block: 92
+- Total blocks: 290
+>>>>>>> f0d2a7b (Update terminology and fix project requirements compliance)
 - Block size: 4096 bytes
 - Database file: output/database.bin

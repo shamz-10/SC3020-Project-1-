@@ -1,19 +1,28 @@
 === TASK 3: QUERY PROCESSING RESULTS ===
-Query: Find and delete records with FT_PCT_home > 0.9
+Query: Find and delete games with FT_PCT_home > 0.9
 
 B+ Tree Method:
+<<<<<<< HEAD
 - Records found: 1778
 - Index node I/Os (total): 24
 - Index nodes accessed (unique): 21
 - Data block I/Os (total): 942
 - Data blocks accessed (unique): 233
+=======
+- Games found: 1778
+- Index node I/Os (total): 23
+- Index nodes accessed (unique): 20
+- Data block I/Os (total): 731
+- Data blocks accessed (unique): 222
+>>>>>>> f0d2a7b (Update terminology and fix project requirements compliance)
 - Average FT_PCT_home: 0.9396
-- Runtime: 0.000037 seconds
+- Runtime: 0.000062 seconds
 
 Deletion Process:
-- Records deleted: 1778
+- Games deleted: 1778
 
 Brute Force Method:
+<<<<<<< HEAD
 - Records found: 1778
 - Data blocks accessed: 1159
 - Runtime: 0.001898 seconds
@@ -21,6 +30,15 @@ Brute Force Method:
 Performance Comparison:
 - Speedup: 51.30x faster
 - Block access reduction: 79.9%
+=======
+- Games found: 1778
+- Data blocks accessed: 290
+- Runtime: 0.000449 seconds
+
+Performance Comparison:
+- Speedup: 7.24x faster
+- Block access reduction: 23.4%
+>>>>>>> f0d2a7b (Update terminology and fix project requirements compliance)
 
 Updated B+ Tree Statistics After Deletion:
 - Number of nodes: 2673
