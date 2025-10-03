@@ -315,7 +315,7 @@ void task3_delete_operations() {
     std::cout << "\n=== UPDATED B+ TREE STATISTICS AFTER DELETION ===" << std::endl;
     bptree.printStatistics();
     
-    // Step 9: Generate results tables with correct values
+    // Step 9: Generate results tables with correct values (AFTER B+ tree is updated)
     generateResultsTables(deleted_records.size(), avg_ft_bptree, deleted_records.size(), brute_force_results.size(), brute_time);
 }
 

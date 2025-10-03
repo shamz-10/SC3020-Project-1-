@@ -3,26 +3,26 @@ Query: Find and delete games with FT_PCT_home > 0.9
 
 B+ Tree Method:
 - Games found: 1778
-- Index node I/Os (total): 8
-- Index nodes accessed (unique): 4
-- Data block I/Os (total): 0
-- Data blocks accessed (unique): 0
+- Index node I/Os (total): 23
+- Index nodes accessed (unique): 20
+- Data block I/Os (total): 1779
+- Data blocks accessed (unique): 288
 - Average FT_PCT_home: 0.9396
-- Runtime: 0.000015 seconds
+- Runtime: 0.000035 seconds
 
 Deletion Process:
 - Games deleted: 1778
 
 Brute Force Method:
 - Games found: 1778
-- Data blocks accessed: 290
-- Runtime: 0.000456 seconds
+- Data blocks accessed: 870
+- Runtime: 0.001269 seconds
 
 Performance Comparison:
-- Speedup: 30.40x faster
-- Block access reduction: 100.0%
+- Speedup: 36.26x faster
+- Block access reduction: 66.9%
 
 Updated B+ Tree Statistics After Deletion:
-- Number of nodes: 269
+- Number of nodes: 1295
 - Number of levels: 3
-- Root node keys: 0.737 0.833
+- Root node keys: 0.615 0.682 0.724 0.759 0.789 0.821 0.862
