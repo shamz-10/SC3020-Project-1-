@@ -290,7 +290,7 @@ void task3_delete_operations() {
     std::cout << "  - Games found: " << deleted_records.size() << std::endl;
     std::cout << "  - Games deleted: " << deleted_count << std::endl;
     std::cout << "  - Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_bptree << std::endl;
-    std::cout << "  - Execution time: " << std::fixed << std::setprecision(3) << bptree_time << " seconds" << std::endl;
+    std::cout << "  - Execution time: " << std::fixed << std::setprecision(6) << bptree_time << " seconds" << std::endl;
     std::cout << "  - Index nodes accessed (total I/Os): " << bptree.getIndexNodeIOsTotal() << std::endl;
     std::cout << "  - Index nodes accessed (unique): " << bptree.getIndexNodesAccessedUnique() << std::endl;
     std::cout << "  - Data blocks accessed (total I/Os): " << db.getDataBlockIOsTotal() << std::endl;
@@ -300,7 +300,7 @@ void task3_delete_operations() {
     std::cout << "\nBrute Force Method:" << std::endl;
     std::cout << "  - Games found: " << brute_force_results.size() << std::endl;
     std::cout << "  - Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_brute << std::endl;
-    std::cout << "  - Execution time: " << std::fixed << std::setprecision(3) << brute_time << " seconds" << std::endl;
+    std::cout << "  - Execution time: " << std::fixed << std::setprecision(6) << brute_time << " seconds" << std::endl;
     std::cout << "  - Data blocks accessed: " << blocks_accessed << std::endl;
     std::cout << "  - Data block I/Os (total): " << db.getDataBlockIOsTotal() << std::endl;
     

@@ -8,7 +8,7 @@ B+ Tree Method:
 - Data block I/Os (total): 0
 - Data blocks accessed (unique): 0
 - Average FT_PCT_home: 0.9396
-- Runtime: 0.000011 seconds
+- Runtime: 0.000015 seconds
 
 Deletion Process:
 - Games deleted: 1778
@@ -16,10 +16,10 @@ Deletion Process:
 Brute Force Method:
 - Games found: 1778
 - Data blocks accessed: 290
-- Runtime: 0.000524 seconds
+- Runtime: 0.000456 seconds
 
 Performance Comparison:
-- Speedup: 47.64x faster
+- Speedup: 30.40x faster
 - Block access reduction: 100.0%
 
 Updated B+ Tree Statistics After Deletion:
