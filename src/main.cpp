@@ -23,6 +23,8 @@
 #include <fstream>       // For file operations
 #include <set>           // For unique block counting
 #include <map>           // For batching record reads by block
+#include <sstream>
+
 
 // Project-specific header files
 #include "storage/database.h"    // Database storage component
@@ -199,23 +201,25 @@ void task3_delete_operations() {
     bptree_timer.start();
     
     // Use range search to find records with FT_PCT_home between 0.9 and 1.0
-    std::vector<RecordPointer> bptree_results = bptree.rangeSearch(0.9f, 1.0f);
+    // Note: We need to find records > 0.9, so we use a small epsilon to exclude exactly 0.9
+    std::vector<RecordPointer> bptree_results = bptree.rangeSearch(0.900001f, 1.0f);
     
     double bptree_time = bptree_timer.elapsed();
-    
-    // Store the I/O counts for the query (before deletion)
-    int query_index_ios_total = bptree.getIndexNodeIOsTotal();
-    int query_index_nodes_unique = bptree.getIndexNodesAccessedUnique();
-    int query_data_ios_total = db.getDataBlockIOsTotal();
-    int query_data_blocks_unique = db.getDataBlocksAccessedUnique();
-    
+
+    // Now, read the records and compute stats, and measure data block I/Os
+    db.resetIOCounters(); // <-- Reset here to measure only the following reads
+
     // Step 3: Calculate statistics for B+ tree results BEFORE deletion
-    // Batch by block to minimize repeated reads
     float sum_ft = 0.0f;
     std::vector<Record> deleted_records;
     std::map<int, std::vector<int>> block_to_indices;
+    std::set<std::pair<int, int>> unique_ptrs; // To avoid duplicate deletions
+
     for (const RecordPointer& ptr : bptree_results) {
-        block_to_indices[ptr.block_id].push_back(ptr.record_index);
+        // Only add unique pointers
+        if (unique_ptrs.insert({ptr.block_id, ptr.record_index}).second) {
+            block_to_indices[ptr.block_id].push_back(ptr.record_index);
+        }
     }
     for (const auto& entry : block_to_indices) {
         int block_id = entry.first;
@@ -231,13 +235,25 @@ void task3_delete_operations() {
             }
         }
     }
-    
     float avg_ft_bptree = deleted_records.empty() ? 0.0f : sum_ft / deleted_records.size();
-    
+
+    // Store the I/O counts for the query (after reading records)
+    int query_index_ios_total = bptree.getIndexNodeIOsTotal();
+    int query_index_nodes_unique = bptree.getIndexNodesAccessedUnique();
+    int query_data_ios_total = db.getDataBlockIOsTotal();
+    int query_data_blocks_unique = db.getDataBlocksAccessedUnique();
+
     std::cout << "Found " << deleted_records.size() << " records with FT_PCT_home > 0.9" << std::endl;
     
     // Step 4: Perform brute force linear scan for comparison BEFORE deletion
     std::cout << "Performing brute force linear scan for comparison..." << std::endl;
+    
+    // Create a fresh database connection to ensure clean state
+    Database db_brute("output/database.bin");
+    if (!db_brute.open()) {
+        std::cerr << "Error: Cannot open database for brute force comparison" << std::endl;
+        return;
+    }
     
     Timer brute_timer;
     brute_timer.start();
@@ -246,12 +262,12 @@ void task3_delete_operations() {
     int blocks_accessed = 0;
     
     // Reset I/O counters for brute force
-    db.resetIOCounters();
+    db_brute.resetIOCounters();
     
     // Scan all blocks sequentially (brute force approach)
-    for (int block_id = 0; block_id < db.getNumBlocks(); block_id++) {
+    for (int block_id = 0; block_id < db_brute.getNumBlocks(); block_id++) {
         Block block;
-        if (db.readBlock(block_id, block)) {
+        if (db_brute.readBlock(block_id, block)) {
             blocks_accessed++;
             // Check each record in the block
             for (int record_index = 0; record_index < block.getNumRecords(); record_index++) {
@@ -272,21 +288,24 @@ void task3_delete_operations() {
     }
     float avg_ft_brute = brute_force_results.empty() ? 0.0f : sum_ft_brute / brute_force_results.size();
     
+    // Close the brute force database connection
+    db_brute.close();
+    
     // Step 6: Now delete the records from both B+ tree and database
     std::cout << "Deleting games with FT_PCT_home > 0.9 from B+ tree and database..." << std::endl;
     
     // Delete records from B+ tree
-    int deleted_count = bptree.removeRange(0.9f, 1.0f);
-    
-    // Delete records from database (only the ones we found)
+    int deleted_count = bptree.removeRange(0.900001f, 1.0f);
+
+    // Delete records from database (only the unique ones we found)
     int db_deleted_count = 0;
-    for (const RecordPointer& ptr : bptree_results) {
-        if (db.deleteRecord(ptr.block_id, ptr.record_index)) {
+    for (const auto& ptr_pair : unique_ptrs) {
+        if (db.deleteRecord(ptr_pair.first, ptr_pair.second)) {
             db_deleted_count++;
         }
     }
     
-    std::cout << "Deleted " << deleted_records.size() << " games from B+ tree" << std::endl;
+    std::cout << "Deleted " << deleted_count << " games from B+ tree" << std::endl;
     std::cout << "Deleted " << db_deleted_count << " games from database" << std::endl;
     
     // Step 7: Print comprehensive performance comparison
@@ -295,7 +314,7 @@ void task3_delete_operations() {
     // B+ Tree method results
     std::cout << "B+ Tree Method:" << std::endl;
     std::cout << "  - Games found: " << deleted_records.size() << std::endl;
-    std::cout << "  - Games deleted: " << deleted_records.size() << std::endl;
+    std::cout << "  - Games deleted: " << deleted_count << std::endl;
     std::cout << "  - Average FT_PCT_home: " << std::fixed << std::setprecision(4) << avg_ft_bptree << std::endl;
     std::cout << "  - Execution time: " << std::fixed << std::setprecision(6) << bptree_time << " seconds" << std::endl;
     std::cout << "  - Index nodes accessed (total I/Os): " << query_index_ios_total << std::endl;
@@ -312,18 +331,29 @@ void task3_delete_operations() {
     std::cout << "  - Data block I/Os (total): " << db.getDataBlockIOsTotal() << std::endl;
     
     // Performance improvement analysis
+    double speedup = (bptree_time > 0.0) ? (brute_time / bptree_time) : 0.0;
+    double block_access_reduction = (db.getNumBlocks() > 0)
+        ? (1.0 - (double)query_data_blocks_unique / db.getNumBlocks()) * 100.0
+        : 0.0;
     std::cout << "\nPerformance Improvement:" << std::endl;
     std::cout << "  - Speedup: " << std::fixed << std::setprecision(2) 
-              << (brute_time / bptree_time) << "x faster" << std::endl;
+              << speedup << "x faster" << std::endl;
     std::cout << "  - Block access reduction: " << std::fixed << std::setprecision(1)
-              << ((blocks_accessed - deleted_records.size()) * 100.0 / blocks_accessed) << "%" << std::endl;
+              << block_access_reduction << "%" << std::endl;
     
     // Step 8: Report updated B+ tree statistics after deletion
     std::cout << "\n=== UPDATED B+ TREE STATISTICS AFTER DELETION ===" << std::endl;
     bptree.printStatistics();
-    
-    // Step 9: Generate results tables with correct values (AFTER B+ tree is updated)
-    generateResultsTables(deleted_records.size(), avg_ft_bptree, deleted_records.size(), brute_force_results.size(), brute_time, query_index_ios_total, query_index_nodes_unique, query_data_ios_total, query_data_blocks_unique);
+    // *** FLUSH CHANGES TO DISK so re-opened handles see them ***
+    bptree.close();
+    db.close();
+
+    // Step 9: Now write the files (this re-opens fresh handles inside)
+    generateResultsTables(
+      deleted_records.size(), avg_ft_bptree, deleted_count,
+      brute_force_results.size(), brute_time,
+      query_index_ios_total, query_index_nodes_unique, query_data_ios_total, query_data_blocks_unique
+    );
 }
 
 /**
@@ -402,7 +432,7 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         
         Timer bptree_timer;
         bptree_timer.start();
-        std::vector<RecordPointer> results = bptree.rangeSearch(0.9f, 1.0f);
+        std::vector<RecordPointer> results = bptree.rangeSearch(0.900001f, 1.0f);
         double bptree_time = bptree_timer.elapsed();
         
         // Calculate average FT_PCT_home for found games
@@ -455,8 +485,8 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         
         // Updated B+ tree statistics after deletion
         task3_file << "Updated B+ Tree Statistics After Deletion:" << std::endl;
-        task3_file << "- Number of nodes: " << bptree.getNumNodes() << std::endl;
-        task3_file << "- Number of levels: " << bptree.getNumLevels() << std::endl;
+        // Create a stringstream to temporarily capture output
+        bptree.printStatistics(task3_file);
         
         // Get and display updated root node keys
         std::vector<float> updated_root_keys = bptree.getRootNodeKeys();
@@ -512,7 +542,7 @@ void generateResultsTables(int records_found, float avg_ft_pct, int records_dele
         summary_file << "- Query: FT_PCT_home > 0.9" << std::endl;
         bptree.resetIOCounters();
         db.resetIOCounters();
-        std::vector<RecordPointer> query_results = bptree.rangeSearch(0.9f, 1.0f);
+        std::vector<RecordPointer> query_results = bptree.rangeSearch(0.900001f, 1.0f);
         summary_file << "- Games matching query: " << query_results.size() << std::endl;
         summary_file << "- Index node I/Os (total): " << bptree.getIndexNodeIOsTotal() << std::endl;
         summary_file << "- Index nodes accessed (unique): " << bptree.getIndexNodesAccessedUnique() << std::endl;

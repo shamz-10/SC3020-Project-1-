@@ -493,21 +493,22 @@ std::vector<float> BPTree::getRootKeys() const {
     return keys;
 }
 
-void BPTree::printStatistics() const {
-    std::cout << "\n=== B+ TREE STATISTICS ===" << std::endl;
-    std::cout << "Order (n): " << order << std::endl;
-    std::cout << "Number of nodes: " << getNumNodes() << std::endl;
-    std::cout << "Number of levels: " << getNumLevels() << std::endl;
-    std::cout << "Root node ID: " << root_id << std::endl;
-    
+void BPTree::printStatistics(std::ostream& out) const {
+    out << "\n=== B+ TREE STATISTICS ===" << std::endl;
+    out << "Order (n): " << order << std::endl;
+    out << "Number of nodes: " << getNumNodes() << std::endl;
+    out << "Number of levels: " << getNumLevels() << std::endl;
+    out << "Root node ID: " << root_id << std::endl;
+
     std::vector<float> root_keys = getRootKeys();
-    std::cout << "Root node keys: ";
+    out << "Root node keys: ";
     for (float key : root_keys) {
-        std::cout << key << " ";
+        out << key << " ";
     }
-    std::cout << std::endl;
-    std::cout << "==========================\n" << std::endl;
+    out << std::endl;
+    out << "==========================\n" << std::endl;
 }
+
 
 void BPTree::printTree() const {
     if (root_id == -1) {
