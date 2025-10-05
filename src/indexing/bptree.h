@@ -390,7 +390,7 @@ public:
      * 
      * Displays comprehensive statistics about the B+ tree.
      */
-    void printStatistics() const;
+    void printStatistics(std::ostream& out = std::cout) const;
     
     /**
      * Get Index Nodes Accessed Count

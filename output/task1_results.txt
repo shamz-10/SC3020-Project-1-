@@ -1,8 +1,8 @@
 === TASK 1: STORAGE COMPONENT RESULTS ===
 Game Statistics:
-- Total games: 79953
+- Total games: 26651
 - Record size: 44 bytes
 - Games per block: 92
-- Total blocks: 870
+- Total blocks: 290
 - Block size: 4096 bytes
 - Database file: output/database.bin
