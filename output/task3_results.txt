@@ -1,28 +1,35 @@
-=== TASK 3: QUERY PROCESSING RESULTS ===
-Query: Find and delete games with FT_PCT_home > 0.9
+=== TASK 3: DELETE OPERATIONS ===
+Capturing original B+ tree statistics...
+Finding records with FT_PCT_home > 0.9 using B+ tree...
+Found 1778 records with FT_PCT_home > 0.9
+Performing brute force linear scan for comparison...
+Deleting games with FT_PCT_home > 0.9 from B+ tree and database...
+Deleted 1778 games from B+ tree
+Deleted 1805 games from database
 
+=== PERFORMANCE COMPARISON ===
 B+ Tree Method:
-- Games found: 1778
-- Index node I/Os (total): 23
-- Index nodes accessed (unique): 20
-- Data block I/Os (total): 288
-- Data blocks accessed (unique): 288
-- Average FT_PCT_home: 0.9396
-- Runtime: 0.000012 seconds
-
-Deletion Process:
-- Games deleted: 1778
+  - Games found: 1778
+  - Games deleted: 1778
+  - Average FT_PCT_home: 0.9396
+  - Execution time: 0.000060 seconds
+  - Index nodes accessed (total I/Os): 23
+  - Index nodes accessed (unique): 20
+  - Data blocks accessed (total I/Os): 288
+  - Data blocks accessed (unique): 288
 
 Brute Force Method:
-- Games found: 1778
-- Data blocks accessed: 290
-- Runtime: 0.000433 seconds
+  - Games found: 1778
+  - Average FT_PCT_home: 0.9396
+  - Execution time: 0.000433 seconds
+  - Data blocks accessed: 290
+  - Data block I/Os (total): 3900
 
-Performance Comparison:
-- Speedup: 36.08x faster
-- Block access reduction: 100.0%
+Performance Improvement:
+  - Speedup: 7.22x faster
+  - Block access reduction: 0.7%
 
-Updated B+ Tree Statistics After Deletion:
+=== UPDATED B+ TREE STATISTICS AFTER DELETION ===
 
 === B+ TREE STATISTICS ===
 Order (n): 101
@@ -31,5 +38,3 @@ Number of levels: 3
 Root node ID: 248
 Root node keys: 0.7 0.8 
 ==========================
-
-- Root node keys: 0.737 0.833
